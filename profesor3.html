@@ -107,10 +107,10 @@
     </div>
     <div class="lobby-grid">
       <div class="join-card">
-        <div style="font-family:'Unbounded',sans-serif;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Link para alumnos</div>
+        <div style="font-family:'Unbounded',sans-serif;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Escaneá para entrar</div>
+        <div id="qrcode" style="margin:0 auto 14px;width:160px;height:160px;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;"></div>
         <div class="join-url" id="joinUrl">cargando...</div>
         <button class="copy-btn" onclick="copyUrl()">📋 Copiar link</button>
-        <div style="margin-top:12px;font-size:0.78rem;color:var(--muted);">Compartí por WhatsApp o proyectalo</div>
       </div>
       <div class="players-card">
         <div class="player-count" id="playerCount">0</div>
@@ -168,6 +168,7 @@
 
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, get, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -205,6 +206,14 @@ let currentQ = 0, scores = {}, players = {}, answersThisQ = {}, timerInterval = 
 // Student URL
 const studentUrl = window.location.href.replace('profesor3.html','alumno3.html');
 document.getElementById('joinUrl').textContent = studentUrl;
+// Generate QR
+new QRCode(document.getElementById('qrcode'), {
+  text: studentUrl,
+  width: 160, height: 160,
+  colorDark: '#000000',
+  colorLight: '#ffffff',
+  correctLevel: QRCode.CorrectLevel.M
+});
 
 document.getElementById('statusBadge').textContent = '● Conectado';
 document.getElementById('statusBadge').style.color = '#00c9a7';
@@ -240,7 +249,7 @@ function renderQ() {
   document.getElementById('qLabel').textContent = `Pregunta ${currentQ+1} / ${total}`;
   document.getElementById('progFill').style.width = `${(currentQ/total)*100}%`;
   document.getElementById('qText').textContent = q.question;
-  document.getElementById('optsPreview').innerHTML = q.options.map((o,i)=>`<div class="opt-tag ${i===q.correct?'correct':''}">${ICONS[i]} ${o} ${i===q.correct?'✓':''}</div>`).join('');
+  document.getElementById('optsPreview').innerHTML = q.options.map((o,i)=>`<div class="opt-tag" id="opt${i}">${ICONS[i]} ${o}</div>`).join('');
   document.getElementById('statAnswered').textContent='0';
   document.getElementById('statCorrect').textContent='0';
   document.getElementById('statPct').textContent='0%';
@@ -273,7 +282,17 @@ function updateStats() {
     const max=Math.max(...counts,1), q=QUESTIONS[currentQ];
     document.getElementById('barRows').innerHTML=counts.map((c,i)=>`<div class="bar-row"><div class="bar-opt">${ICONS[i]}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round((c/max)*100)}%;background:${BAR_COLORS[i]}${i===q.correct?'':'99'}">${c>0?`<span>${c}</span>`:''}</div></div><div class="bar-count">${c}</div></div>`).join('');
   }
-  if(answered>=Object.keys(players).length&&answered>0){document.getElementById('nextBtn').style.display='flex';document.getElementById('waitMsg').style.display='none';}
+  const allDone = answered>=Object.keys(players).length&&answered>0;
+  if(allDone){ revealAnswer(); document.getElementById('nextBtn').style.display='flex';document.getElementById('waitMsg').style.display='none'; }
+}
+
+function revealAnswer(){
+  const q=QUESTIONS[currentQ];
+  q.options.forEach((_,i)=>{
+    const el=document.getElementById('opt'+i);
+    if(!el) return;
+    if(i===q.correct){ el.classList.add('correct'); el.innerHTML=`${ICONS[i]} ${q.options[i]} ✓`; }
+  });
 }
 
 function updateLb() {
@@ -286,7 +305,7 @@ function updateLb() {
 
 function startTimer(){
   clearInterval(timerInterval); timeLeft=TIME; updateTimerUI();
-  timerInterval=setInterval(()=>{timeLeft--;updateTimerUI();if(timeLeft<=0){clearInterval(timerInterval);document.getElementById('nextBtn').style.display='flex';document.getElementById('waitMsg').style.display='none';}},1000);
+  timerInterval=setInterval(()=>{timeLeft--;updateTimerUI();if(timeLeft<=0){clearInterval(timerInterval);revealAnswer();document.getElementById('nextBtn').style.display='flex';document.getElementById('waitMsg').style.display='none';}},1000);
 }
 function updateTimerUI(){
   const el=document.getElementById('timerBig');el.textContent=timeLeft;
