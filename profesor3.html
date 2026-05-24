@@ -119,6 +119,7 @@
       </div>
     </div>
     <button class="btn btn-go" id="startBtn" onclick="startGame()" disabled>▶ Iniciar Quiz</button>
+    <button class="btn btn-outline" style="margin-top:10px;" onclick="clearRoom()">🗑 Limpiar sala</button>
   </div>
 
   <!-- QUESTION -->
@@ -312,6 +313,19 @@ async function finishGame(){
   document.getElementById('finalLb').innerHTML=sorted.map((p,i)=>`<div class="lb-row ${i<3?['top1','top2','top3'][i]:''}"><div class="lb-pos">${medals[i]||(i+1)}</div><div class="lb-name">${p.name}</div><div class="lb-pts">${p.total} pts</div></div>`).join('');
   document.getElementById('progFill').style.width='100%';
 }
+
+async function clearRoom(){
+  if(!confirm('¿Borrar todos los jugadores y empezar de cero?')) return;
+  await remove(ref(db,'players'));
+  await remove(ref(db,'answers'));
+  await remove(ref(db,'scores'));
+  await set(ref(db,'game'),{status:'lobby'});
+  scores={};currentQ=0;
+  document.getElementById('playerCount').textContent='0';
+  document.getElementById('playerList').innerHTML='<span style="color:var(--muted);font-size:0.82rem;">Esperando participantes...</span>';
+  document.getElementById('startBtn').disabled=true;
+}
+window.clearRoom=clearRoom;
 
 async function replayQuiz(){
   await remove(ref(db,'answers'));await remove(ref(db,'scores'));
