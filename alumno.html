@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizBlast — Alumno</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0f;--card:#13131a;--border:#22222f;
+    --a:#ff6b35;--b:#00c9a7;--c:#ffd166;--d:#6c63ff;
+    --text:#f0f0f8;--muted:#55556a;--r:16px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+  header{width:100%;padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:900;}
+  .logo span{color:var(--a);}
+  .score-pill{background:var(--card);border:1px solid var(--border);border-radius:50px;padding:6px 16px;font-family:'Unbounded',sans-serif;font-size:0.75rem;color:var(--c);display:none;}
+  main{width:100%;max-width:520px;padding:24px 16px;flex:1;}
+  .screen{display:none;}
+  .screen.active{display:block;animation:up 0.3s ease;}
+  @keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+  /* JOIN */
+  .join-hero{text-align:center;padding:20px 0 28px;}
+  .join-hero h1{font-family:'Unbounded',sans-serif;font-size:1.8rem;font-weight:900;line-height:1.1;margin-bottom:12px;}
+  .join-hero h1 span{color:var(--a);}
+  .join-hero p{color:var(--muted);font-size:0.9rem;}
+  .input-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:16px;}
+  .input-label{font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;display:block;}
+  .name-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:1rem;outline:none;transition:border-color 0.2s;}
+  .name-input:focus{border-color:var(--a);}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:16px;border-radius:12px;border:none;cursor:pointer;font-family:'Unbounded',sans-serif;font-size:0.82rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;transition:all 0.18s;}
+  .btn-join{background:var(--a);color:#000;box-shadow:0 4px 20px rgba(255,107,53,0.3);}
+  .btn-join:hover{transform:translateY(-2px);}
+  .btn-join:disabled{opacity:0.4;cursor:default;transform:none;}
+
+  /* WAITING */
+  .wait-center{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:20px;}
+  .pulse{width:64px;height:64px;border-radius:50%;background:rgba(255,107,53,0.15);border:3px solid var(--a);animation:pulse 1.5s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:0.6}}
+  .wait-center h2{font-family:'Unbounded',sans-serif;font-size:1.1rem;}
+  .wait-center p{color:var(--muted);font-size:0.88rem;}
+  .name-tag{background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.3);border-radius:50px;padding:8px 20px;font-family:'Unbounded',sans-serif;font-size:0.85rem;color:var(--a);}
+
+  /* QUESTION */
+  .q-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .q-counter{font-family:'Unbounded',sans-serif;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .timer-ring{position:relative;width:54px;height:54px;}
+  .timer-ring svg{width:54px;height:54px;transform:rotate(-90deg);}
+  .t-track{fill:none;stroke:var(--border);stroke-width:4;}
+  .t-fill{fill:none;stroke:var(--b);stroke-width:4;stroke-linecap:round;stroke-dasharray:131;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke 0.4s;}
+  .t-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Unbounded',sans-serif;font-size:0.9rem;font-weight:700;}
+  .prog-bar{width:100%;height:3px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:20px;}
+  .prog-fill{height:100%;background:linear-gradient(90deg,var(--a),var(--c));border-radius:3px;transition:width 0.4s ease;}
+  .q-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px;margin-bottom:14px;position:relative;overflow:hidden;}
+  .q-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--a),var(--c),var(--b));}
+  .q-text{font-size:clamp(1rem,3vw,1.15rem);font-weight:600;line-height:1.55;}
+  .answers{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media(max-width:400px){.answers{grid-template-columns:1fr;}}
+  .ans-btn{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:16px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:500;text-align:left;transition:all 0.15s;}
+  .ans-btn:hover:not(:disabled){border-color:var(--a);transform:translateY(-2px);}
+  .ans-btn:disabled{cursor:default;}
+  .ans-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+  .ans-btn:nth-child(1) .ans-icon{background:rgba(255,107,53,0.15);color:var(--a);}
+  .ans-btn:nth-child(2) .ans-icon{background:rgba(0,201,167,0.15);color:var(--b);}
+  .ans-btn:nth-child(3) .ans-icon{background:rgba(255,209,102,0.15);color:var(--c);}
+  .ans-btn:nth-child(4) .ans-icon{background:rgba(108,99,255,0.15);color:var(--d);}
+  .ans-btn.sel-ok{border-color:#00e676;background:rgba(0,230,118,0.12);box-shadow:0 0 16px rgba(0,230,118,0.2);}
+  .ans-btn.sel-bad{border-color:#ff4444;background:rgba(255,68,68,0.08);}
+  .ans-btn.correct{border-color:#00e676;background:rgba(0,230,118,0.07);}
+  .ans-btn.wrong{border-color:#ff4444;opacity:0.5;}
+
+  .feedback{border-radius:12px;padding:14px 16px;margin-top:12px;font-weight:600;font-size:1rem;text-align:center;display:none;animation:pop 0.28s cubic-bezier(.36,.07,.19,.97);}
+  .feedback.show{display:block;}
+  .feedback.ok{background:rgba(0,230,118,0.1);color:#00e676;border:1px solid rgba(0,230,118,0.25);}
+  .feedback.bad{background:rgba(255,68,68,0.1);color:#ff6b6b;border:1px solid rgba(255,68,68,0.25);}
+  .feedback .pts{font-size:0.78rem;color:var(--muted);margin-top:4px;font-weight:400;}
+  @keyframes pop{0%{transform:scale(0.82);opacity:0}70%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+
+  .explain{background:rgba(108,99,255,0.08);border:1px solid rgba(108,99,255,0.2);border-radius:12px;padding:12px 16px;margin-top:10px;font-size:0.85rem;color:#b0b0d0;line-height:1.65;display:none;}
+  .explain.show{display:block;animation:up 0.3s ease;}
+  .explain strong{color:var(--b);}
+
+  .wait-next{text-align:center;padding:16px;color:var(--muted);font-size:0.85rem;margin-top:10px;display:none;}
+  .wait-next.show{display:block;}
+
+  /* FINAL */
+  .final-hero{text-align:center;padding:24px 0;}
+  .final-hero .trophy{font-size:4rem;display:inline-block;animation:bounce 1.2s ease infinite;margin-bottom:12px;}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .final-score{font-family:'Unbounded',sans-serif;font-size:clamp(2.5rem,10vw,4rem);font-weight:900;background:linear-gradient(90deg,var(--a),var(--c));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:12px 0;}
+  .final-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0;}
+  .fs-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;}
+  .fs-val{font-family:'Unbounded',sans-serif;font-size:1.3rem;font-weight:900;margin-bottom:4px;}
+  .fs-lbl{font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
+  .rank-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;text-align:center;margin-bottom:16px;}
+  .rank-pos{font-family:'Unbounded',sans-serif;font-size:3rem;font-weight:900;color:var(--c);}
+
+  /* CONFETTI */
+  #confetti{position:fixed;inset:0;pointer-events:none;z-index:200;overflow:hidden;}
+  .cp{position:absolute;animation:fall linear forwards;}
+  @keyframes fall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Quiz<span>Blast</span></div>
+  <div class="score-pill" id="scorePill">⭐ <span id="scoreVal">0</span> pts</div>
+</header>
+
+<main>
+
+  <!-- JOIN -->
+  <div class="screen active" id="sJoin">
+    <div class="join-hero">
+      <h1>Entrá al<br><span>Quiz</span></h1>
+      <p>Business Model Canvas — sesión en vivo</p>
+    </div>
+    <div class="input-wrap">
+      <label class="input-label">Tu nombre</label>
+      <input class="name-input" id="nameInput" type="text" placeholder="Ej: María García" maxlength="24" autocomplete="off">
+    </div>
+    <button class="btn btn-join" id="joinBtn" onclick="joinGame()">Entrar al quiz →</button>
+  </div>
+
+  <!-- WAITING -->
+  <div class="screen" id="sWait">
+    <div class="wait-center">
+      <div class="pulse"></div>
+      <div class="name-tag" id="waitName"></div>
+      <h2>¡Estás dentro!</h2>
+      <p>Esperando que el profesor inicie el quiz...</p>
+    </div>
+  </div>
+
+  <!-- QUESTION -->
+  <div class="screen" id="sQuestion">
+    <div class="q-top">
+      <div class="q-counter" id="qCounter">1 / 10</div>
+      <div class="timer-ring">
+        <svg viewBox="0 0 46 46">
+          <circle class="t-track" cx="23" cy="23" r="21"/>
+          <circle class="t-fill" id="tFill" cx="23" cy="23" r="21"/>
+        </svg>
+        <div class="t-num" id="tNum">20</div>
+      </div>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    <div class="q-card"><div class="q-text" id="qText"></div></div>
+    <div class="answers" id="answers"></div>
+    <div class="feedback" id="feedback">
+      <div id="fbMsg"></div>
+      <div class="pts" id="fbPts"></div>
+    </div>
+    <div class="explain" id="explain"><strong>Explicación:</strong> <span id="explainTxt"></span></div>
+    <div class="wait-next" id="waitNext">⏳ Esperando la siguiente pregunta...</div>
+  </div>
+
+  <!-- FINAL -->
+  <div class="screen" id="sFinal">
+    <div class="final-hero">
+      <div class="trophy" id="trophy">🏆</div>
+      <div style="font-family:'Unbounded',sans-serif;font-size:1.2rem;font-weight:900;">¡Quiz completado!</div>
+      <div class="final-score" id="finalScore">0</div>
+      <div style="color:var(--muted);font-size:0.88rem;">puntos totales</div>
+    </div>
+    <div class="rank-card">
+      <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Tu posición</div>
+      <div class="rank-pos" id="rankPos">#-</div>
+      <div style="font-size:0.85rem;color:var(--muted)" id="rankOf">de - participantes</div>
+    </div>
+    <div class="final-stats">
+      <div class="fs-card"><div class="fs-val" id="fsC" style="color:#00e676">0</div><div class="fs-lbl">Correctas</div></div>
+      <div class="fs-card"><div class="fs-val" id="fsW" style="color:#ff6b6b">0</div><div class="fs-lbl">Incorrectas</div></div>
+      <div class="fs-card"><div class="fs-val" id="fsA" style="color:var(--b)">0%</div><div class="fs-lbl">Precisión</div></div>
+    </div>
+  </div>
+
+</main>
+
+<div id="confetti"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBol7attRRGkXcgGR_8knoS9lpi3ysVBBo",
+  authDomain: "quizblast-mbt.firebaseapp.com",
+  databaseURL: "https://quizblast-mbt-default-rtdb.firebaseio.com",
+  projectId: "quizblast-mbt",
+  storageBucket: "quizblast-mbt.firebasestorage.app",
+  messagingSenderId: "814365334155",
+  appId: "1:814365334155:web:c1c7bd2fcf1e571e7b128e"
+};
+
+const QUESTIONS = [
+  { q:"¿Cuántos bloques tiene el Business Model Canvas original de Osterwalder?", opts:["7 bloques","9 bloques","11 bloques","6 bloques"], correct:1, exp:"El BMC tiene exactamente 9 bloques." },
+  { q:"¿Qué bloque del BMC describe lo que una empresa ofrece que resuelve el problema de sus clientes?", opts:["Segmentos de clientes","Canales","Propuesta de valor","Relación con clientes"], correct:2, exp:"La Propuesta de Valor es el núcleo del BMC." },
+  { q:"En el BMC, los 'Canales' se refieren principalmente a:", opts:["Los canales de redes sociales","Cómo la empresa llega y entrega valor a sus clientes","Los canales internos del equipo","Los canales de distribución de proveedores"], correct:1, exp:"Los Canales describen cómo la empresa llega a sus clientes para entregar la propuesta de valor." },
+  { q:"¿Cuál de los siguientes NO es un tipo de estructura de costos en el BMC?", opts:["Orientada a costos (cost-driven)","Orientada a valor (value-driven)","Orientada a volumen (volume-driven)","Economías de escala"], correct:2, exp:"'Volume-driven' no es una categoría del modelo. El BMC distingue cost-driven y value-driven." },
+  { q:"¿Qué bloque del BMC incluye patentes, marcas, bases de datos y derechos de autor?", opts:["Actividades clave","Recursos clave","Socios clave","Propuesta de valor"], correct:1, exp:"Los Recursos Clave incluyen activos físicos, intelectuales, humanos y financieros." },
+  { q:"Una empresa que usa un modelo 'freemium' tiene una fuente de ingresos que se clasifica principalmente como:", opts:["Venta de activos","Suscripción con upsell/premium","Licenciamiento","Publicidad"], correct:1, exp:"El freemium combina versión gratuita con versión de pago (premium)." },
+  { q:"¿Qué diferencia a los 'Socios Clave' de los simples proveedores en el BMC?", opts:["No hay diferencia","Los socios clave tienen alianzas estratégicas que reducen riesgo o aportan recursos clave","Los socios clave solo son inversores","Los proveedores son más importantes"], correct:1, exp:"Los Socios Clave son alianzas estratégicas que permiten acceder a recursos o mercados que solos no podrían." },
+  { q:"Si una empresa tiene altos costos fijos y bajos costos variables, su estructura se describe mejor como:", opts:["Value-driven con economías de alcance","Cost-driven con economías de escala","Cost-driven orientada a eficiencia","Ninguna de las anteriores"], correct:1, exp:"Altos costos fijos + bajos variables es típico de estructuras cost-driven con economías de escala." },
+  { q:"¿Cuál es la principal diferencia entre el BMC y el Lean Canvas?", opts:["El Lean Canvas tiene más bloques","El Lean Canvas reemplaza bloques por 'Problema', 'Solución' y 'Métricas clave', orientándose a startups","El BMC es solo para empresas tecnológicas","No hay diferencia significativa"], correct:1, exp:"Ash Maurya adaptó el BMC en el Lean Canvas para startups, reemplazando varios bloques." },
+  { q:"En Spotify, ¿en qué bloque del BMC ubicarías a los artistas y sellos discográficos?", opts:["Segmentos de clientes","Socios clave","Recursos clave","Actividades clave"], correct:1, exp:"Los artistas y sellos son Socios Clave de Spotify: sin ellos no habría contenido para el modelo." }
+];
+
+const ICONS = ["🔴","🔵","🟡","🟣"];
+const CIRC = 2 * Math.PI * 21;
+const TIME = 20;
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let uid = null;
+let playerName = '';
+let myScore = 0;
+let myCorrect = 0;
+let myWrong = 0;
+let answered = false;
+let timerInterval = null;
+let timeLeft = TIME;
+let currentQ = 0;
+
+function genUID() {
+  return 'u_' + Math.random().toString(36).substr(2,9);
+}
+
+async function joinGame() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) { document.getElementById('nameInput').focus(); return; }
+
+  uid = genUID();
+  playerName = name;
+
+  document.getElementById('joinBtn').disabled = true;
+
+  await set(ref(db, `players/${uid}`), { name, joinedAt: Date.now() });
+
+  document.getElementById('waitName').textContent = '👋 ' + name;
+  showScreen('sWait');
+  document.getElementById('scorePill').style.display = 'flex';
+
+  listenGame();
+}
+window.joinGame = joinGame;
+
+function listenGame() {
+  onValue(ref(db, 'game'), snap => {
+    const game = snap.val();
+    if (!game) return;
+    if (game.status === 'question') {
+      currentQ = game.currentQ;
+      answered = false;
+      showQuestion(game);
+    } else if (game.status === 'finished') {
+      showFinal();
+    }
+  });
+}
+
+function showQuestion(game) {
+  const q = QUESTIONS[game.currentQ];
+  const total = game.totalQ;
+
+  document.getElementById('qCounter').textContent = `${game.currentQ+1} / ${total}`;
+  document.getElementById('progFill').style.width = `${(game.currentQ/total)*100}%`;
+  document.getElementById('qText').textContent = q.q;
+
+  const grid = document.getElementById('answers');
+  grid.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'ans-btn';
+    btn.innerHTML = `<div class="ans-icon">${ICONS[i]}</div><span>${opt}</span>`;
+    btn.onclick = () => pick(i, btn, game.startedAt);
+    grid.appendChild(btn);
+  });
+
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('explain').className = 'explain';
+  document.getElementById('waitNext').className = 'wait-next';
+
+  showScreen('sQuestion');
+
+  // Sync timer with server start time
+  const elapsed = Math.floor((Date.now() - game.startedAt) / 1000);
+  timeLeft = Math.max(0, TIME - elapsed);
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  updateTimerUI();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerUI();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      if (!answered) timeUp();
+    }
+  }, 1000);
+}
+
+function updateTimerUI() {
+  const r = Math.max(0, timeLeft) / TIME;
+  const fill = document.getElementById('tFill');
+  fill.style.strokeDasharray = CIRC;
+  fill.style.strokeDashoffset = CIRC * (1 - r);
+  fill.style.stroke = r > 0.5 ? 'var(--b)' : r > 0.25 ? 'var(--c)' : 'var(--a)';
+  document.getElementById('tNum').textContent = Math.max(0, timeLeft);
+}
+
+async function pick(idx, btn, startedAt) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timerInterval);
+
+  const q = QUESTIONS[currentQ];
+  const btns = document.querySelectorAll('.ans-btn');
+  btns.forEach(b => b.disabled = true);
+  btns.forEach((b,i) => { if(i===q.correct) b.classList.add('correct'); });
+
+  const ok = idx === q.correct;
+  const elapsed = Math.max(0, (Date.now() - startedAt) / 1000);
+  const pts = ok ? Math.max(100, Math.round(((TIME - elapsed) / TIME) * 1000)) : 0;
+
+  btn.classList.add(ok ? 'sel-ok' : 'sel-bad');
+
+  if (ok) { myScore += pts; myCorrect++; }
+  else { myWrong++; }
+
+  document.getElementById('scoreVal').textContent = myScore;
+
+  // Save answer to Firebase
+  await set(ref(db, `answers/q${currentQ}/${uid}`), {
+    name: playerName,
+    choice: idx,
+    correct: ok,
+    pts,
+    answeredAt: Date.now()
+  });
+
+  // Show feedback
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback show ' + (ok ? 'ok' : 'bad');
+  document.getElementById('fbMsg').textContent = ok ? '✅ ¡Correcto!' : '❌ Incorrecto';
+  document.getElementById('fbPts').textContent = ok ? `+${pts} puntos` : '';
+
+  document.getElementById('explainTxt').textContent = q.exp;
+  document.getElementById('explain').className = 'explain show';
+  document.getElementById('waitNext').className = 'wait-next show';
+}
+
+function timeUp() {
+  answered = true;
+  myWrong++;
+  const btns = document.querySelectorAll('.ans-btn');
+  btns.forEach(b => b.disabled = true);
+  btns.forEach((b,i) => { if(i===QUESTIONS[currentQ].correct) b.classList.add('correct'); });
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback show bad';
+  document.getElementById('fbMsg').textContent = '⏰ ¡Tiempo!';
+  document.getElementById('fbPts').textContent = '';
+  document.getElementById('explainTxt').textContent = QUESTIONS[currentQ].exp;
+  document.getElementById('explain').className = 'explain show';
+  document.getElementById('waitNext').className = 'wait-next show';
+
+  set(ref(db, `answers/q${currentQ}/${uid}`), {
+    name: playerName, choice: -1, correct: false, pts: 0, answeredAt: Date.now()
+  });
+}
+
+async function showFinal() {
+  clearInterval(timerInterval);
+  const acc = Math.round((myCorrect/(myCorrect+myWrong||1))*100);
+  document.getElementById('finalScore').textContent = myScore;
+  document.getElementById('fsC').textContent = myCorrect;
+  document.getElementById('fsW').textContent = myWrong;
+  document.getElementById('fsA').textContent = acc+'%';
+
+  // Get ranking
+  const scoresSnap = await get(ref(db,'scores'));
+  const scores = scoresSnap.val() || {};
+  const sorted = Object.entries(scores).sort((a,b)=>b[1].total-a[1].total);
+  const rank = sorted.findIndex(([id])=>id===uid) + 1;
+  document.getElementById('rankPos').textContent = rank > 0 ? `#${rank}` : '#-';
+  document.getElementById('rankOf').textContent = `de ${sorted.length} participantes`;
+
+  let em = '🏆';
+  if (acc < 60) em = '📚';
+  if (acc < 40) em = '💪';
+  document.getElementById('trophy').textContent = em;
+
+  showScreen('sFinal');
+  if (acc >= 50) confetti();
+}
+
+function confetti() {
+  const c = document.getElementById('confetti');
+  c.innerHTML = '';
+  const cols = ['#ff6b35','#00c9a7','#ffd166','#6c63ff','#00e676'];
+  for(let i=0;i<60;i++){
+    const p=document.createElement('div');
+    p.className='cp';
+    const s=6+Math.random()*10;
+    p.style.cssText=`left:${Math.random()*100}%;width:${s}px;height:${s}px;background:${cols[~~(Math.random()*cols.length)]};border-radius:${Math.random()>0.5?'50%':'3px'};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*0.8}s;`;
+    c.appendChild(p);
+  }
+  setTimeout(()=>c.innerHTML='',4000);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// Enter key to join
+document.getElementById('nameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') joinGame();
+});
+</script>
+</body>
+</html>
